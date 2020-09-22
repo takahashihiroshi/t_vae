@@ -161,6 +161,12 @@ class StudentsTVAE:
         ln_df, loc, ln_scale = self.network.decode(from_numpy(Z, self.device))
         return to_numpy(ln_df, self.device), to_numpy(loc, self.device), to_numpy(ln_scale, self.device)
 
+    def reconstruct(self, X):
+        mu, ln_var = self.network.encode(from_numpy(X, self.device))
+        z = reparameterize(mu=mu, ln_var=ln_var)
+        ln_df, loc, ln_scale = self.network.decode(z)
+        return to_numpy(ln_df, self.device), to_numpy(loc, self.device), to_numpy(ln_scale, self.device)
+
     def evidence_lower_bound(self, X, k=1):
         return to_numpy(self.network.evidence_lower_bound(from_numpy(X, self.device), k=k), self.device)
 

@@ -160,6 +160,12 @@ class GaussianVAE:
         mu, ln_var = self.network.decode(from_numpy(Z, self.device))
         return to_numpy(mu, self.device), to_numpy(ln_var, self.device)
 
+    def reconstruct(self, X):
+        mu_enc, ln_var_enc = self.network.encode(from_numpy(X, self.device))
+        z = reparameterize(mu=mu_enc, ln_var=ln_var_enc)
+        mu_dec, ln_var_dec = self.network.decode(z)
+        return to_numpy(mu_dec, self.device), to_numpy(ln_var_dec, self.device)
+
     def evidence_lower_bound(self, X, k=1):
         return to_numpy(self.network.evidence_lower_bound(from_numpy(X, self.device), k=k), self.device)
 

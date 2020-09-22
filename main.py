@@ -62,3 +62,13 @@ if __name__ == '__main__':
     np.save(f"npy/exp_{dataset}_{decoder}_RE_{learning_rate}_{seed}.npy", np.array(model.reconstruction_errors))
     np.save(f"npy/exp_{dataset}_{decoder}_KL_{learning_rate}_{seed}.npy", np.array(model.kl_divergences))
     np.save(f"npy/exp_{dataset}_{decoder}_test_score_{learning_rate}_{seed}.npy", test_score)
+
+    if decoder == "normal":
+        mu, ln_var = model.reconstruct(X_train)
+        np.save(f"npy/exp_{dataset}_{decoder}_mu_{learning_rate}_{seed}.npy", mu)
+        np.save(f"npy/exp_{dataset}_{decoder}_ln_var_{learning_rate}_{seed}.npy", ln_var)
+    else:
+        ln_df, loc, ln_scale = model.reconstruct(X_train)
+        np.save(f"npy/exp_{dataset}_{decoder}_ln_df_{learning_rate}_{seed}.npy", ln_df)
+        np.save(f"npy/exp_{dataset}_{decoder}_loc_{learning_rate}_{seed}.npy", loc)
+        np.save(f"npy/exp_{dataset}_{decoder}_ln_scale_{learning_rate}_{seed}.npy", ln_scale)
