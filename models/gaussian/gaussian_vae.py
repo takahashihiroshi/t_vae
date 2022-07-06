@@ -3,13 +3,15 @@ import time
 
 import torch
 from torch import nn
+from collections import OrderedDict
+
 
 from models.utils import from_numpy, to_numpy, make_data_loader
 from models.utils import gaussian_nll, standard_gaussian_nll, gaussian_kl_divergence, reparameterize
 
 
 class GaussianNetwork(nn.Module):
-    def __init__(self, n_in, n_latent, n_h):
+    def __init__(self, n_in, n_latent, n_h, layers = 3):
         super(GaussianNetwork, self).__init__()
 
         self.n_in = n_in
@@ -17,23 +19,44 @@ class GaussianNetwork(nn.Module):
         self.n_h = n_h
 
         # Encoder
-        self.le1 = nn.Sequential(
-            nn.Linear(n_in, n_h), nn.Tanh(),
-            nn.Linear(n_h, n_h), nn.Tanh(),
-            nn.Linear(n_h, n_h), nn.Tanh(),
-        )
+        self.le1 = self.construct_encoder(layers)
         self.le2_mu = nn.Linear(n_h, n_latent)
         self.le2_ln_var = nn.Linear(n_h, n_latent)
 
         # Decoder
-        self.ld1 = nn.Sequential(
-            nn.Linear(n_latent, n_h), nn.Tanh(),
-            nn.Linear(n_h, n_h), nn.Tanh(),
-            nn.Linear(n_h, n_h), nn.Tanh(),
-        )
+        self.ld1 = self.construct_decoder(layers)
         self.ld2_mu = nn.Linear(n_h, n_in)
         self.ld2_ln_var = nn.Linear(n_h, n_in)
+        
+    def construct_encoder(self, layers):
 
+        network = OrderedDict()
+        network['0'] = nn.Linear(self.n_in, self.n_h)
+        network['1'] = nn.Tanh() 
+        
+        count = 2
+        for i in range(layers-1):
+            network[str(count)]   = nn.Linear(self.n_h, self.n_h)
+            network[str(count+1)] = nn.Tanh()
+            count += 2
+                
+        return nn.Sequential(network)
+    
+    def construct_decoder(self, layers):
+
+        network = OrderedDict()
+        network['0'] = nn.Linear(self.n_latent, self.n_h)
+        network['1'] = nn.Tanh()
+        
+        count = 2
+        for i in range(layers-1):
+            network[str(count)]   = nn.Linear(self.n_h, self.n_h)
+            network[str(count+1)] = nn.Tanh()
+            count += 2
+                
+        return nn.Sequential(network)
+        
+    
     def encode(self, x):
         h = self.le1(x)
         return self.le2_mu(h), self.le2_ln_var(h)
@@ -74,9 +97,9 @@ class GaussianNetwork(nn.Module):
 
 
 class GaussianVAE:
-    def __init__(self, n_in, n_latent, n_h):
+    def __init__(self, n_in, n_latent, n_h, layers=3):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.network = GaussianNetwork(n_in, n_latent, n_h).to(self.device)
+        self.network = GaussianNetwork(n_in, n_latent, n_h, layers).to(self.device)
 
         self.train_losses = []
         self.train_times = []
